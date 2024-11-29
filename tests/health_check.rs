@@ -2,7 +2,21 @@
 
 use sqlx::PgPool;
 use std::net::TcpListener;
+use std::sync::LazyLock;
 use zero2prod::configuration::get_configuration;
+use zero2prod::telemetry::{get_subscriber, init_subscriber};
+
+static TRACING: LazyLock<()> = LazyLock::new(|| {
+    let default_filter_level = "info".to_string();
+    let subscriber_name = "test".to_string();
+    if std::env::var("TEST_LOG").is_ok() {
+        let subscriber = get_subscriber(subscriber_name, default_filter_level, std::io::stdout);
+        init_subscriber(subscriber);
+    } else {
+        let subscriber = get_subscriber(subscriber_name, default_filter_level, std::io::sink);
+        init_subscriber(subscriber);
+    }
+});
 
 pub struct TestApp {
     app_address: String,
@@ -25,7 +39,7 @@ async fn health_check_works() {
 }
 
 #[tokio::test]
-async fn subscribe_returns_200_for_valid_data() {
+async fn subscribe_returns_201_for_valid_data() {
     let app = spawn_app().await;
     let client = reqwest::Client::new();
 
@@ -78,6 +92,7 @@ async fn subscribe_returns_400_for_invalid_data() {
 }
 
 async fn spawn_app() -> TestApp {
+    LazyLock::force(&TRACING);
     let listener = TcpListener::bind("127.0.0.1:0").expect("Failed to bind to a random port");
     let port = listener.local_addr().unwrap().port();
 
