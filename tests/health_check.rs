@@ -1,5 +1,6 @@
 //! tests/health_check.rs
 
+use secrecy::ExposeSecret;
 use sqlx::PgPool;
 use std::net::TcpListener;
 use std::sync::LazyLock;
@@ -97,7 +98,7 @@ async fn spawn_app() -> TestApp {
     let port = listener.local_addr().unwrap().port();
 
     let configuration = get_configuration().expect("Failed to read configuration.");
-    let db_pool = PgPool::connect(&configuration.database.connection_string())
+    let db_pool = PgPool::connect(&configuration.database.connection_string().expose_secret())
         .await
         .expect("Failed to connect to Postgres.");
 

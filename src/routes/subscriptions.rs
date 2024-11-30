@@ -15,7 +15,6 @@ pub struct FormData {
     name = "Saving new subscriber",
     skip_all,
     fields(
-        request_id = %Uuid::new_v4(),
         subscriber_name = %form.name,
         subscriber_email = %form.email,
     )
